@@ -31,7 +31,7 @@ export default function Orders() {
 
       data.sort((a, b) => {
         return new Date(b.createdAt?.seconds * 1000) -
-               new Date(a.createdAt?.seconds * 1000);
+          new Date(a.createdAt?.seconds * 1000);
       });
 
       setOrders(data);
@@ -48,19 +48,19 @@ export default function Orders() {
     );
   };
   const handleDelete = async (id) => {
-  const confirmDelete = window.confirm("Supprimer cette commande ?");
-  if (!confirmDelete) return;
+    const confirmDelete = window.confirm("Supprimer cette commande ?");
+    if (!confirmDelete) return;
 
-  try {
-    await deleteDoc(doc(db, "orders", id));
+    try {
+      await deleteDoc(doc(db, "orders", id));
 
-    setOrders(prev => prev.filter(o => o.id !== id));
+      setOrders(prev => prev.filter(o => o.id !== id));
 
-  } catch (error) {
-    console.error(error);
-    alert("Erreur lors de suppression");
-  }
-};
+    } catch (error) {
+      console.error(error);
+      alert("Erreur lors de suppression");
+    }
+  };
 
   const filtered = orders.filter(o =>
     o.client?.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -164,12 +164,12 @@ export default function Orders() {
                     marginBottom: "10px",
                     alignItems: "center"
                   }}>
-                   <img
-  src={item.image}
-  alt={item.name || "product"}
-  width="60"
-  style={{ borderRadius: "8px" }}
-/>
+                    <img
+                      src={item.image}
+                      alt={item.name || "product"}
+                      width="60"
+                      style={{ borderRadius: "8px" }}
+                    />
                     <div>
                       <p style={{ margin: 0 }}>
                         <b>{item.name}</b>
@@ -182,16 +182,16 @@ export default function Orders() {
                 ))}
 
                 <div style={{ marginTop: 10 }}>
-                  <button 
-  onClick={() => handleDelete(order.id)}
-  style={{
-    background: "red",
-    color: "white",
-    marginTop: "10px"
-  }}
->
-  Supprimer
-</button>
+                  <button
+                    onClick={() => handleDelete(order.id)}
+                    style={{
+                      background: "red",
+                      color: "white",
+                      marginTop: "10px"
+                    }}
+                  >
+                    Supprimer
+                  </button>
                   <button onClick={() => updateStatus(order.id, "confirmé")}>
                     Confirmé
                   </button>
