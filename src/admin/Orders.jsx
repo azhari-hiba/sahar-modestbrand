@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { db } from "../services/firebase";
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
@@ -47,6 +47,20 @@ export default function Orders() {
       prev.map(o => (o.id === id ? { ...o, status } : o))
     );
   };
+  const handleDelete = async (id) => {
+  const confirmDelete = window.confirm("Supprimer cette commande ?");
+  if (!confirmDelete) return;
+
+  try {
+    await deleteDoc(doc(db, "orders", id));
+
+    setOrders(prev => prev.filter(o => o.id !== id));
+
+  } catch (error) {
+    console.error(error);
+    alert("Erreur lors de suppression");
+  }
+};
 
   const filtered = orders.filter(o =>
     o.client?.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -168,6 +182,16 @@ export default function Orders() {
                 ))}
 
                 <div style={{ marginTop: 10 }}>
+                  <button 
+  onClick={() => handleDelete(order.id)}
+  style={{
+    background: "red",
+    color: "white",
+    marginTop: "10px"
+  }}
+>
+  Supprimer
+</button>
                   <button onClick={() => updateStatus(order.id, "confirmé")}>
                     Confirmé
                   </button>
