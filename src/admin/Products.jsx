@@ -3,10 +3,10 @@ import { getProducts } from "../services/productService";
 import { deleteDoc, doc } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useNavigate } from "react-router-dom";
-
 export default function Products() {
   const [products, setProducts] = useState([]);
   const navigate = useNavigate();
+const [search, setSearch] = useState("");
 
   const fetch = async () => {
     const data = await getProducts();
@@ -30,91 +30,92 @@ export default function Products() {
       return sum + Object.values(c.sizes).reduce((a, b) => a + b, 0);
     }, 0);
   };
-
+const filteredProducts = products.filter((p) =>
+  p.name?.toLowerCase().includes(search.toLowerCase()) ||
+  p.collection?.toLowerCase().includes(search.toLowerCase())
+);
   return (
-    <div className="container">
-      <h2>Produits</h2>
+   
+  <div className="container">
+    <h2 style={{ marginBottom: 20 }}>Produits</h2>
 
-      {products.map((p) => {
+    <div className="admin-products">
+      <input
+  type="text"
+  placeholder="Rechercher par nom ou collection..."
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  style={{
+    width: "100%",
+    padding: "10px",
+    marginBottom: "20px",
+    borderRadius: "10px",
+    border: "1px solid #ccc"
+  }}
+/>
+      {filteredProducts.map((p) => {
         const stock = getTotalStock(p.colors);
         const firstImage = p.colors?.[0]?.image;
 
         return (
-          <div
-            key={p.id}
-            style={{
-              display: "flex",
-              gap: 20,
-              padding: 15,
-              marginBottom: 15,
-              borderRadius: 10,
-              background: "#fff",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.05)"
-            }}
-          >
+          <div className="admin-card" key={p.id}>
+
+            {/* IMAGE */}
             <img
               src={firstImage}
-              alt=""
-              style={{
-                width: 100,
-                height: 100,
-                objectFit: "cover",
-                borderRadius: 10
-              }}
+              alt={p.name}
+              className="admin-img"
             />
 
-            <div style={{ flex: 1 }}>
+            {/* INFO */}
+            <div className="admin-info">
               <h3>{p.name}</h3>
 
-              <p>
-                💰 {p.price} DH{" "}
+              <div className="price">
+                <span className="new">{p.price} DH</span>
                 {p.oldPrice && (
-                  <span style={{ textDecoration: "line-through" }}>
-                    {p.oldPrice}
-                  </span>
+                  <span className="old">{p.oldPrice} DH</span>
                 )}
-              </p>
+              </div>
 
-              <p>📂 {p.collection}</p>
+              <p className="collection">📂 {p.collection}</p>
 
-              <p>
+              <p className="stock">
                 📦 Stock:{" "}
-                <strong style={{ color: stock > 0 ? "green" : "red" }}>
+                <span className={stock > 0 ? "in" : "out"}>
                   {stock}
-                </strong>
+                </span>
               </p>
 
-              <div style={{ display: "flex", gap: 10 }}>
+              {/* COLORS */}
+              <div className="colors">
                 {p.colors?.map((c, i) => (
-                  <img
-                    key={i}
-                    src={c.image}
-                    alt=""
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 6
-                    }}
-                  />
+                  <img key={i} src={c.image} alt="" />
                 ))}
               </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <button onClick={() => navigate(`/admin/edit/${p.id}`)}>
+            {/* ACTIONS */}
+            <div className="admin-actions">
+              <button
+                className="edit"
+                onClick={() => navigate(`/admin/edit/${p.id}`)}
+              >
                 Modifier
               </button>
 
               <button
-                style={{ background: "red" }}
+                className="delete"
                 onClick={() => handleDelete(p.id)}
               >
                 Supprimer
               </button>
             </div>
+
           </div>
         );
       })}
     </div>
-  );
+  </div>
+);
 }
