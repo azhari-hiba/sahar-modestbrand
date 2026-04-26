@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /product/
+Disallow: /collection/
+Disallow: /cart
+Disallow: /admin
+
+Sitemap: https://sahar-modestbrand.netlify.app/sitemap.xml

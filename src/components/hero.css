@@ -1,0 +1,111 @@
+/* ================= HERO WOW ================= */
+
+.hero {
+  width: 100%;
+  padding: 80px 40px;
+  background: #f5f1ed;
+}
+
+/* CONTAINER */
+.hero-container {
+  max-width: 1200px;
+  margin: auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 60px;
+}
+
+/* IMAGE */
+.hero-image {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.hero-image img {
+  width: 100%;
+  max-width: 300px;
+  border-radius: 20px;
+}
+
+/* TEXT SIDE */
+.hero-texts {
+  flex: 1.2;
+}
+
+/* BADGE */
+.hero-badge {
+  background: #e8dfd8;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #8b6f5a;
+}
+
+/* TITLE */
+.hero-texts h1 {
+  font-size: 42px;
+  margin: 20px 0;
+  line-height: 1.4;
+}
+
+/* TEXT */
+.hero-texts p {
+  color: #666;
+  margin-bottom: 25px;
+  line-height: 1.7;
+}
+
+/* BUTTONS */
+.hero-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+}
+/* BTN */
+.hero-buttons button {
+  background: #8b6f5a;
+  color: white;
+  padding: 12px 22px;
+  border-radius: 25px;
+  border: none;
+  cursor: pointer;
+}
+
+/* OUTLINE */
+.hero-buttons .outline {
+  background: transparent;
+  border: 1px solid #8b6f5a;
+  color: #8b6f5a;
+}
+
+/* ================= MOBILE ================= */
+
+@media (max-width: 768px) {
+  .hero-container {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .hero-texts {
+    text-align: center;
+  }
+
+  .hero-buttons {
+    justify-content: center;
+    flex-direction: column;
+  }
+
+  .hero-buttons button {
+    width: 100%;
+  }
+}
+.hero-image img {
+  width: 100%;
+  max-width: 250px;
+  border-radius: 20px;
+  object-fit: contain;
+}
