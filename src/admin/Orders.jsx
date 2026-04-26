@@ -150,12 +150,12 @@ export default function Orders() {
                     marginBottom: "10px",
                     alignItems: "center"
                   }}>
-                    <img
-                      src={item.image}
-                      width="60"
-                      style={{ borderRadius: "8px" }}
-                    />
-
+                   <img
+  src={item.image}
+  alt={item.name || "product"}
+  width="60"
+  style={{ borderRadius: "8px" }}
+/>
                     <div>
                       <p style={{ margin: 0 }}>
                         <b>{item.name}</b>

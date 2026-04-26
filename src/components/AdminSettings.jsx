@@ -9,15 +9,15 @@ export default function AdminSettings() {
 
   const ref = doc(db, "settings", "contact");
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        setWhatsapp(snap.data().whatsapp || "");
-      }
-    };
-    fetchData();
-  }, []);
+useEffect(() => {
+  const fetchData = async () => {
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      setWhatsapp(snap.data().whatsapp || "");
+    }
+  };
+  fetchData();
+}, [ref]);
 
   const handleSave = async () => {
     if (!whatsapp) {

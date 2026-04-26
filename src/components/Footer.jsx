@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Phone, Camera, Truck, MessageCircle, RefreshCcw } from "lucide-react";
+import { Phone, Camera, Truck, MessageCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../services/firebase";
