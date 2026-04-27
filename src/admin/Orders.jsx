@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { db } from "../services/firebase";
-import { collection, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+  getDoc
+} from "firebase/firestore";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
@@ -40,21 +47,59 @@ export default function Orders() {
     fetchOrders();
   }, []);
 
-  const updateStatus = async (id, status) => {
-    await updateDoc(doc(db, "orders", id), { status });
+  const restoreStock = async (items) => {
+    for (let item of items) {
+      const ref = doc(db, "products", item.productId);
+      const snap = await getDoc(ref);
+
+      if (!snap.exists()) continue;
+
+      const data = snap.data();
+
+      const updatedColors = data.colors.map((color) => {
+        if (color.image === item.image) {
+          return {
+            ...color,
+            sizes: {
+              ...color.sizes,
+              [item.size]:
+                (color.sizes[item.size] || 0) + item.quantity
+            }
+          };
+        }
+        return color;
+      });
+
+      await updateDoc(ref, {
+        colors: updatedColors
+      });
+    }
+  };
+
+  const updateStatus = async (order, status) => {
+    if (status === "annulé" && order.status !== "annulé") {
+      await restoreStock(order.items);
+    }
+
+    await updateDoc(doc(db, "orders", order.id), { status });
 
     setOrders(prev =>
-      prev.map(o => (o.id === id ? { ...o, status } : o))
+      prev.map(o => (o.id === order.id ? { ...o, status } : o))
     );
   };
-  const handleDelete = async (id) => {
+
+  const handleDelete = async (order) => {
     const confirmDelete = window.confirm("Supprimer cette commande ?");
     if (!confirmDelete) return;
 
     try {
-      await deleteDoc(doc(db, "orders", id));
+      if (order.status !== "annulé") {
+        await restoreStock(order.items);
+      }
 
-      setOrders(prev => prev.filter(o => o.id !== id));
+      await deleteDoc(doc(db, "orders", order.id));
+
+      setOrders(prev => prev.filter(o => o.id !== order.id));
 
     } catch (error) {
       console.error(error);
@@ -183,7 +228,7 @@ export default function Orders() {
 
                 <div style={{ marginTop: 10 }}>
                   <button
-                    onClick={() => handleDelete(order.id)}
+                    onClick={() => handleDelete(order)}
                     style={{
                       background: "red",
                       color: "white",
@@ -192,15 +237,16 @@ export default function Orders() {
                   >
                     Supprimer
                   </button>
-                  <button onClick={() => updateStatus(order.id, "confirmé")}>
+
+                  <button onClick={() => updateStatus(order, "confirmé")}>
                     Confirmé
                   </button>
 
-                  <button onClick={() => updateStatus(order.id, "livré")}>
+                  <button onClick={() => updateStatus(order, "livré")}>
                     Livré
                   </button>
 
-                  <button onClick={() => updateStatus(order.id, "annulé")}>
+                  <button onClick={() => updateStatus(order, "annulé")}>
                     Annulé
                   </button>
                 </div>
