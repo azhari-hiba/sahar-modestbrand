@@ -1,80 +1,61 @@
 import { Link } from "react-router-dom";
-import { Phone, Camera, Truck, MessageCircle } from "lucide-react";
+import { Phone, Camera, Truck, MessageSquare, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../services/firebase";
 
 export default function Footer() {
-
   const [whatsapp, setWhatsapp] = useState("");
-
   useEffect(() => {
-    const unsub = onSnapshot(
-      doc(db, "settings", "contact"),
-      (snap) => {
-        if (snap.exists()) {
-          setWhatsapp(snap.data().whatsapp);
-        }
-      }
-    );
-
-    return () => unsub(); 
+    const unsub = onSnapshot(doc(db, "settings", "contact"), (snap) => {
+      if (snap.exists()) setWhatsapp(snap.data().whatsapp);
+    });
+    return () => unsub();
   }, []);
 
   return (
-    <footer className="footer">
-
-      <div className="footer-container">
-
-        <div className="footer-col">
-          <h2>SAHAR</h2>
-          <p>
-            SAHAR Modest Brand incarne l’élégance, la pudeur et le style moderne.
-          </p>
+    <footer className="footer-v2">
+      <div className="footer-grid container">
+        <div className="footer-brand-col">
+          <h2 className="footer-logo">SAHAR</h2>
+          <p>L’élégance, la pudeur et le style moderne réunis dans une seule marque marocaine.</p>
+          <div className="footer-socials">
+             <a href={`https://wa.me/${whatsapp}`} target="_blank"><Phone size={20}/></a>
+             <a href="https://instagram.com/sahar_modestbrand" target="_blank"><Camera size={20}/></a>
+          </div>
         </div>
-
-        <div className="footer-col">
-          <h3>Contact</h3>
-
-          {whatsapp && (
-            <a
-              href={`https://wa.me/${whatsapp}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Phone size={18} /> WhatsApp
-            </a>
-          )}
-
-          <a
-            href="https://www.instagram.com/sahar_modestbrand"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <Camera size={18} /> Instagram
-          </a>
+        <div className="footer-links-col">
+          <h3>Navigation</h3>
+          <Link to="/">Accueil</Link>
+          <Link to="/about">À propos</Link>
+          <Link to="/reclamation">Réclamation / Échange</Link>
         </div>
-
-        <div className="footer-col">
-          <h3>Informations</h3>
-
-          <p><Truck size={16} /> Livraison partout au Maroc</p>
-          <p><MessageCircle size={16} /> Support rapide WhatsApp</p>
-          <Link to="/reclamation" className="footer-link">
-  <MessageCircle size={16} /> Réclamation / Échange
-</Link>
+        <div className="footer-info-col">
+          <h3>Services</h3>
+          <p><Truck size={18} color="#8b6f5a"/> Livraison partout au Maroc</p>
+          <p><MessageSquare size={18} color="#8b6f5a"/> Support client 7j/7</p>
+          <p><ShieldCheck size={18} color="#8b6f5a"/> Paiement à la livraison</p>
         </div>
-
+      </div>
+      <div className="footer-copyright">
+        <p>© {new Date().getFullYear()} <Link to="/admin">SAHAR</Link> — Tous droits réservés.</p>
       </div>
 
-      <div className="footer-bottom">
-        © {new Date().getFullYear()}{" "}
-        <Link to="/admin" className="stealth-link">
-          SAHAR
-        </Link>{" "}
-        — Tous droits réservés
-      </div>
-
+      <style>{`
+        .footer-v2 { background: #1a1a1a; color: #f9f9f9; padding: 70px 20px 20px; margin-top: 80px; }
+        .footer-grid { max-width: 1200px; margin: 0 auto 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 40px; }
+        .footer-logo { font-size: 32px; margin-bottom: 15px; color: #fff; letter-spacing: 2px; }
+        .footer-brand-col p { color: #888; font-size: 14px; line-height: 1.7; max-width: 300px; }
+        .footer-socials { display: flex; gap: 12px; margin-top: 25px; }
+        .footer-socials a { color: #fff; background: #333; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .footer-socials a:hover { background: #8b6f5a; transform: translateY(-3px); }
+        .footer-links-col h3, .footer-info-col h3 { font-size: 18px; margin-bottom: 25px; color: #fff; font-weight: 600; }
+        .footer-links-col a { display: block; color: #888; text-decoration: none; margin-bottom: 15px; font-size: 15px; transition: 0.2s; }
+        .footer-links-col a:hover { color: #8b6f5a; padding-left: 5px; }
+        .footer-info-col p { display: flex; align-items: center; gap: 12px; color: #888; margin-bottom: 18px; font-size: 14px; }
+        .footer-copyright { border-top: 1px solid #333; padding-top: 25px; text-align: center; font-size: 13px; color: #555; }
+        .footer-copyright a { color: inherit; text-decoration: none; }
+      `}</style>
     </footer>
   );
 }

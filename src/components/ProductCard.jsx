@@ -1,57 +1,105 @@
 import { useNavigate } from "react-router-dom";
-import "./product.css";
 
 export default function ProductCard({ product }) {
   const navigate = useNavigate();
-
+  const image = product.colors?.[0]?.image || "https://via.placeholder.com/300";
   const hasPromo = product.oldPrice && product.price < product.oldPrice;
 
-  const image =
-    product.colors?.[0]?.image || "https://via.placeholder.com/300";
-
-  const totalStock = product.colors?.reduce((sum, color) => {
-    const sizes = color.sizes || {};
-    const totalSizes = Object.values(sizes).reduce((a, b) => a + b, 0);
-    return sum + totalSizes;
-  }, 0);
-
-  const inStock = totalStock > 0;
+  const isOutOfStock = product.colors?.every(color => 
+    Object.values(color.sizes || {}).every(qty => qty === 0)
+  );
 
   return (
-    <div
-      className="card"
-      onClick={() => navigate(`/product/${product.id}`)}
-    >
-      <div className="image-container">
-        <img src={image} alt={product.name} />
-
-        {product.badge && <span className="badge">{product.badge}</span>}
-
-        {hasPromo && <span className="promo">Promo</span>}
-
+    <div className="product-card-v2" onClick={() => navigate(`/product/${product.id}`)}>
+      <div className="image-wrapper">
+        <img src={image} alt={product.name} loading="lazy" />
+        {isOutOfStock && <span className="simple-rupture-badge">Rupture</span>}
+        {hasPromo && !isOutOfStock && (
+          <div className="badge-promo">
+            -{Math.round((1 - product.price / product.oldPrice) * 100)}%
+          </div>
+        )}
       </div>
 
-      <div className="card-content">
-  <h3>{product.name}</h3>
+      <div className="product-details-mini">
+        <span className="brand-name">SAHAR MODEST</span>
+        <h3 className="p-name">{product.name}</h3>
+        <div className="p-price-box">
+          <span className="p-new-price">{product.price} DH</span>
+          {hasPromo && <span className="p-old-price">{product.oldPrice} DH</span>}
+        </div>
+      </div>
 
-  <div className="price-box">
-    {hasPromo && (
-      <span className="old-price">
-        {product.oldPrice} DH
-      </span>
-    )}
+      <style>{`
+        .product-card-v2 { 
+          cursor: pointer; 
+          background: #fff; 
+          border-radius: 4px; 
+          display: flex;
+          flex-direction: column;
+          height: 100%; 
+        }
 
-    <span className={hasPromo ? "new-price promo-price" : "new-price"}>
-      {product.price} DH
-    </span>
-  </div>
+        .image-wrapper { 
+          position: relative; 
+          width: 100%; 
+          aspect-ratio: 3 / 4; 
+          background-color: #f5f5f5;
+          overflow: hidden;
+        }
 
-  {!inStock && (
-    <span className="out-stock">
-      Rupture de stock
-    </span>
-  )}
-</div>
+        .image-wrapper img { 
+          width: 100%; 
+          height: 100%; 
+          object-fit: cover; 
+        }
+
+        .product-details-mini { 
+          padding: 12px 6px; 
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          flex-grow: 1; 
+        }
+
+        .brand-name { font-size: 10px; color: #999; text-transform: uppercase; }
+
+        .p-name { 
+          font-size: 14px; 
+          margin: 6px 0; 
+          color: #2d2d2d; 
+          font-weight: 500;
+          
+          min-height: 40px; 
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .p-price-box { 
+          margin-top: auto;
+          display: flex; 
+          justify-content: center; 
+          align-items: center; 
+          gap: 6px; 
+        }
+
+        .p-new-price { font-weight: 700; color: #8b6f5a; font-size: 15px; }
+        .p-old-price { text-decoration: line-through; color: #bbb; font-size: 12px; }
+
+        .simple-rupture-badge {
+          position: absolute; top: 8px; right: 8px;
+          background: #ff0000; color: white; padding: 2px 6px;
+          border-radius: 2px; font-size: 9px; font-weight: 800;
+        }
+
+        .badge-promo {
+          position: absolute; top: 8px; left: 8px;
+          background: #8b6f5a; color: white; padding: 2px 6px;
+          border-radius: 2px; font-size: 9px; font-weight: 800;
+        }
+      `}</style>
     </div>
   );
 }
