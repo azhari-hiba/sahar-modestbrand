@@ -2,7 +2,7 @@ import { useContext, useState } from "react";
 import { CartContext } from "../context/CartContext";
 import { db } from "../services/firebase";
 import { collection, addDoc, doc, runTransaction } from "firebase/firestore";
-import { User, Phone, MapPin, CreditCard } from "lucide-react";
+import { User,CreditCard } from "lucide-react";
 import Swal from "sweetalert2";
 
 export default function Checkout() {

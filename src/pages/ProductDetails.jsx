@@ -17,22 +17,26 @@ export default function ProductDetails() {
 
   useEffect(() => {
     const fetchProduct = async () => {
-      const snap = await getDoc(doc(db, "products", id));
-      if (snap.exists()) {
-        const data = { id: snap.id, ...snap.data() };
-        setProduct(data);
+      try {
+        const snap = await getDoc(doc(db, "products", id));
+        if (snap.exists()) {
+          const data = { id: snap.id, ...snap.data() };
+          setProduct(data);
 
-        if (data.colors?.[0]?.sizes) {
-          const firstAvailableSize = Object.keys(data.colors[0].sizes).find(
-            (size) => data.colors[0].sizes[size] > 0
-          );
-          if (firstAvailableSize) {
-            setSelectedSize(firstAvailableSize);
+          if (data.colors?.[0]?.sizes) {
+            const firstAvailableSize = Object.keys(data.colors[0].sizes).find(
+              (size) => data.colors[0].sizes[size] > 0
+            );
+            if (firstAvailableSize) {
+              setSelectedSize(firstAvailableSize);
+            }
           }
         }
+      } catch (error) {
+        console.error("Erreur fetching product:", error);
       }
     };
-    fetchProduct();
+    if (id) fetchProduct();
   }, [id]);
 
   if (!product) return <div className="loader-simple">Chargement...</div>;
@@ -60,24 +64,30 @@ export default function ProductDetails() {
   const nextVariant = () => {
     const next = selectedVariant === images.length - 1 ? 0 : selectedVariant + 1;
     setSelectedVariant(next);
+    setQuantity(1);
   };
 
   const prevVariant = () => {
     const prev = selectedVariant === 0 ? images.length - 1 : selectedVariant - 1;
     setSelectedVariant(prev);
+    setQuantity(1);
   };
 
   return (
     <div className="p-details-page">
       <div className="p-gallery">
         <div className="p-main-img-container">
-          <button className="nav-arrow left" onClick={prevVariant}>
+          <button className="nav-arrow left" onClick={prevVariant} aria-label="Précédent">
             <ChevronLeft size={20} />
           </button>
 
-          <img src={variant.image} alt={product.name} className="p-main-img" />
+          <img 
+            src={variant.image} 
+            alt={product.name} 
+            className="p-main-img" 
+          />
 
-          <button className="nav-arrow right" onClick={nextVariant}>
+          <button className="nav-arrow right" onClick={nextVariant} aria-label="Suivant">
             <ChevronRight size={20} />
           </button>
         </div>
@@ -87,8 +97,12 @@ export default function ProductDetails() {
             <img
               key={i}
               src={img}
+              alt={`${product.name} variant ${i}`}
               className={i === selectedVariant ? "active-thumb" : ""}
-              onClick={() => setSelectedVariant(i)}
+              onClick={() => {
+                setSelectedVariant(i);
+                setQuantity(1);
+              }}
             />
           ))}
         </div>
@@ -134,17 +148,27 @@ export default function ProductDetails() {
         <div className="p-section">
           <label>Quantité</label>
           <div className="p-qty-selector">
-            <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={currentStock === 0}>
+            <button 
+              onClick={() => setQuantity((q) => Math.max(1, q - 1))} 
+              disabled={currentStock === 0 || quantity <= 1}
+            >
               -
             </button>
             <span>{quantity}</span>
-            <button onClick={() => setQuantity((q) => Math.min(q + 1, currentStock))} disabled={currentStock === 0}>
+            <button 
+              onClick={() => setQuantity((q) => Math.min(q + 1, currentStock))} 
+              disabled={currentStock === 0 || quantity >= currentStock}
+            >
               +
             </button>
           </div>
         </div>
 
-        <button className="p-add-to-cart-btn" onClick={handleAdd} disabled={!selectedSize || currentStock === 0}>
+        <button 
+          className="p-add-to-cart-btn" 
+          onClick={handleAdd} 
+          disabled={!selectedSize || currentStock === 0}
+        >
           {currentStock === 0 ? "Rupture de Stock" : "Commander Maintenant"}
         </button>
 
@@ -174,7 +198,7 @@ export default function ProductDetails() {
           position: absolute;
           top: 50%;
           transform: translateY(-50%);
-          background: rgba(255, 255, 255, 0.6);
+          background: rgba(255, 255, 255, 0.7);
           border: none;
           width: 35px;
           height: 35px;
@@ -198,7 +222,7 @@ export default function ProductDetails() {
         .size-item:disabled { opacity: 0.3; cursor: not-allowed; background: #f5f5f5; color: #aaa; }
         
         @media (max-width: 480px) {
-          .nav-arrow { width: 30px; height: 30px; }
+          .nav-arrow { width: 32px; height: 32px; }
           .nav-arrow.left { left: 5px; }
           .nav-arrow.right { right: 5px; }
         }
