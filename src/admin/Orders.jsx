@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { db } from "../services/firebase";
 import { collection, getDocs, doc, updateDoc, deleteDoc, getDoc } from "firebase/firestore";
-import { Search, Phone, MapPin, CheckCircle2, XCircle, Clock, Truck, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Phone, MapPin, CheckCircle2, XCircle, Clock, Truck, Trash2, ChevronDown, ChevronUp, Calendar } from "lucide-react";
 import Swal from "sweetalert2";
 
 export default function Orders() {
@@ -20,10 +20,27 @@ export default function Orders() {
 
   useEffect(() => {
     const fetchOrders = async () => {
-      const snap = await getDocs(collection(db, "orders"));
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-      setOrders(data);
+      try {
+        const snap = await getDocs(collection(db, "orders"));
+        const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        data.sort((a, b) => {
+          const parseDate = (obj) => {
+            if (obj?.createdAt?.seconds) return obj.createdAt.seconds * 1000;
+            if (obj?.date) {
+              const cleanDate = obj.date.replace(/"/g, '');
+              const [d, m, y, t] = cleanDate.split(/[\/\s]/);
+              return new Date(`${y}-${m}-${d}T${t}`).getTime() || 0;
+            }
+            return 0;
+          };
+          return parseDate(b) - parseDate(a);
+        });
+        
+        setOrders(data);
+      } catch (error) {
+        console.error(error);
+      }
     };
     fetchOrders();
   }, []);
@@ -59,10 +76,16 @@ export default function Orders() {
     }
     await updateDoc(doc(db, "orders", order.id), { status });
     setOrders(prev => prev.map(o => (o.id === order.id ? { ...o, status } : o)));
+    Swal.fire("Succès", `Statut : ${status}`, "success");
   };
 
   const handleDelete = async (order) => {
-    const res = await Swal.fire({ title: "Supprimer ?", text: "Irréversible !", icon: "warning", showCancelButton: true, confirmButtonColor: "#d33" });
+    const res = await Swal.fire({ 
+      title: "Supprimer ?", 
+      icon: "warning", 
+      showCancelButton: true, 
+      confirmButtonColor: "#d33" 
+    });
     if (res.isConfirmed) {
       if (order.status !== "annulé") await adjustStock(order.items, "restore");
       await deleteDoc(doc(db, "orders", order.id));
@@ -70,78 +93,103 @@ export default function Orders() {
     }
   };
 
-  const filtered = orders.filter(o => o.client?.name?.toLowerCase().includes(search.toLowerCase()) || o.client?.phone?.includes(search));
+  const filtered = orders.filter(o => 
+    o.client?.name?.toLowerCase().includes(search.toLowerCase()) || 
+    o.client?.phone?.includes(search)
+  );
 
   return (
     <div className="orders-page container">
-      <h1>Gestion des Commandes</h1>
-      <div className="search-wrapper-admin">
-        <Search size={18} className="search-icon-svg" />
-        <input type="text" placeholder="Rechercher par nom ou téléphone..." value={search} onChange={(e) => setSearch(e.target.value)} />
+      <div className="header-admin">
+        <h1>Gestion des Commandes</h1>
+        <p>{filtered.length} commandes</p>
       </div>
 
-      {filtered.map(order => {
-        const style = getStatusStyle(order.status);
-        return (
-          <div key={order.id} className="order-card">
-            <div className="order-summary" onClick={() => setOpenId(openId === order.id ? null : order.id)}>
-              <div className="client-info">
-                <b>{order.client?.name}</b>
-                <a href={`tel:${order.client?.phone}`}><Phone size={14} /> {order.client?.phone}</a>
-              </div>
-              <div className="order-meta">
-                <span className="price-tag">{order.total} DH</span>
-                <span className="status-badge" style={{ background: style.bg, color: style.color }}>
-                  {style.icon} {order.status}
-                </span>
-                {openId === order.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-              </div>
-            </div>
+      <div className="search-wrapper-admin">
+        <Search size={18} className="search-icon-svg" />
+        <input type="text" placeholder="Nom ou téléphone..." value={search} onChange={(e) => setSearch(e.target.value)} />
+      </div>
 
-            {openId === order.id && (
-              <div className="order-details">
-                <p><MapPin size={16} /> {order.client?.address}, {order.client?.city}</p>
-                {order.client?.note && <div className="note-box">📝 {order.client.note}</div>}
-                <h4>Produits commandés</h4>
-                {order.items?.map((item, i) => (
-                  <div key={i} className="order-item">
-                    <img src={item.image} alt={item.name} />
-                    <div>
-                      <p><b>{item.name}</b></p>
-                      <small>Taille: {item.size} | Qté: {item.quantity} | {item.price} DH</small>
-                    </div>
+      <div className="orders-list">
+        {filtered.map(order => {
+          const style = getStatusStyle(order.status);
+          const displayDate = order.date ? order.date.replace(/"/g, '') : (order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleString() : "Pas de date");
+          
+          return (
+            <div key={order.id} className="order-card">
+              <div className="order-summary" onClick={() => setOpenId(openId === order.id ? null : order.id)}>
+                <div className="client-info">
+                  <div className="name-row">
+                    <b>{order.client?.name}</b>
+                    <span className="order-date-label"><Calendar size={12} /> {displayDate}</span>
                   </div>
-                ))}
-                <div className="order-actions">
-                  <button className="del" onClick={() => handleDelete(order)}><Trash2 size={16} /></button>
-                  <button onClick={() => updateStatus(order, "confirmé")}>Confirmer</button>
-                  <button onClick={() => updateStatus(order, "livré")}>Livrer</button>
-                  <button onClick={() => updateStatus(order, "annulé")}>Annuler</button>
+                  <a href={`tel:${order.client?.phone}`} className="phone-link"><Phone size={14} /> {order.client?.phone}</a>
+                </div>
+                <div className="order-meta">
+                  <span className="price-tag">{order.total} DH</span>
+                  <span className="status-badge" style={{ background: style.bg, color: style.color }}>
+                    {style.icon} {order.status}
+                  </span>
+                  {openId === order.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                 </div>
               </div>
-            )}
-          </div>
-        );
-      })}
+
+              {openId === order.id && (
+                <div className="order-details">
+                  <div className="shipping-info">
+                    <p><MapPin size={16} /> <b>{order.client?.city}</b></p>
+                    <p>{order.client?.address}</p>
+                    {order.client?.note && <div className="note-box">📝 {order.client.note}</div>}
+                  </div>
+                  <div className="items-grid">
+                    {order.items?.map((item, i) => (
+                      <div key={i} className="order-item">
+                        <img src={item.image} alt="" />
+                        <div className="item-txt">
+                          <p><b>{item.name}</b></p>
+                          <small>T{item.size} | Q{item.quantity} | {item.price} DH</small>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="order-actions">
+                    <button className="del-btn" onClick={() => handleDelete(order)}><Trash2 size={18} /></button>
+                    <div className="status-btns">
+                      <button onClick={() => updateStatus(order, "confirmé")}>Confirmer</button>
+                      <button onClick={() => updateStatus(order, "livré")}>Livrer</button>
+                      <button className="cancel-btn" onClick={() => updateStatus(order, "annulé")}>Annuler</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       <style>{`
-        .orders-page { padding: 40px 20px; background: #fdfbf9; min-height: 100vh; }
-        .order-card { background: white; border-radius: 16px; border: 1px solid #eee; margin-bottom: 15px; padding: 20px; }
+        .orders-page { padding: 30px 15px; background: #fdfbf9; min-height: 100vh; }
+        .header-admin { margin-bottom: 20px; }
+        .search-wrapper-admin { position: relative; margin-bottom: 20px; }
+        .search-icon-svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #8b6f5a; }
+        .search-wrapper-admin input { width: 100%; padding: 12px 40px; border-radius: 10px; border: 1px solid #eee; }
+        .order-card { background: white; border-radius: 12px; border: 1px solid #eee; margin-bottom: 10px; padding: 15px; }
         .order-summary { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        .client-info { display: flex; flex-direction: column; gap: 5px; }
-        .order-meta { display: flex; align-items: center; gap: 15px; }
-        .status-badge { display: flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: capitalize; }
-        .order-details { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
-        .order-item { display: flex; gap: 15px; margin-bottom: 10px; align-items: center; }
-        .order-item img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; }
-        .note-box { background: #fff3cd; padding: 10px; border-radius: 8px; font-size: 13px; margin: 10px 0; }
-        .order-actions { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-        .order-actions button { padding: 8px 15px; border-radius: 8px; border: 1px solid #eee; cursor: pointer; font-weight: 600; background: white; transition: 0.2s; }
-        .order-actions button:hover { background: #fafafa; }
-        .del { background: #fee2e2 !important; color: #b91c1c !important; border: none !important; }
-        .search-wrapper-admin { position: relative; margin-bottom: 25px; max-width: 500px; display: flex; align-items: center; }
-        .search-icon-svg { position: absolute; left: 15px; color: #8b6f5a; }
-        .search-wrapper-admin input { width: 100%; padding: 12px 15px 12px 45px; border-radius: 12px; border: 1px solid #eee; outline: none; }
+        .name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .order-date-label { font-size: 10px; color: #888; background: #f5f5f5; padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px; }
+        .phone-link { color: #8b6f5a; text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 5px; margin-top: 4px; }
+        .order-meta { display: flex; align-items: center; gap: 10px; }
+        .status-badge { display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; }
+        .order-details { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #eee; }
+        .note-box { background: #fffbeb; padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 13px; }
+        .items-grid { margin: 15px 0; display: flex; flex-direction: column; gap: 8px; }
+        .order-item { display: flex; gap: 10px; align-items: center; background: #fafafa; padding: 8px; border-radius: 8px; }
+        .order-item img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; }
+        .order-actions { display: flex; justify-content: space-between; margin-top: 15px; }
+        .status-btns { display: flex; gap: 5px; }
+        .order-actions button { padding: 6px 12px; border-radius: 6px; border: 1px solid #eee; cursor: pointer; font-size: 12px; background: #fff; }
+        .del-btn { background: #fee2e2 !important; color: #b91c1c !important; border: none !important; }
+        .cancel-btn { color: #b91c1c !important; }
       `}</style>
     </div>
   );

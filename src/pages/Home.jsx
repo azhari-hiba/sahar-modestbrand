@@ -25,22 +25,31 @@ export default function Home() {
         const sorted = [...data].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
         setProducts(sorted);
         setFiltered(sorted);
-      } catch (error) { console.error(error); } 
-      finally { setLoading(false); }
+      } catch (error) { 
+        console.error(error); 
+      } finally { 
+        setLoading(false); 
+      }
     };
     fetchData();
   }, []);
 
   useEffect(() => {
     const fetchCollections = async () => {
-      const snap = await getDocs(collection(db, "collections"));
-      setCollections(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      try {
+        const snap = await getDocs(collection(db, "collections"));
+        setCollections(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      } catch (error) {
+        console.error("Error fetching collections:", error);
+      }
     };
     fetchCollections();
   }, []);
 
   useEffect(() => {
-    const result = products.filter((p) => p.name?.toLowerCase().includes(search.toLowerCase()));
+    const result = products.filter((p) => 
+      p.name?.toLowerCase().includes(search.toLowerCase())
+    );
     setFiltered(result);
     setCurrentPage(1);
   }, [search, products]);
@@ -52,16 +61,129 @@ export default function Home() {
 
   return (
     <div className="home-wrapper">
-      <div className="container">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="top-announcement">
-          🚚 Livraison gratuite partout au Maroc
-        </motion.div>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+        
+        .home-wrapper { 
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          background: #fff;
+        }
 
-        <HeroSection />
+        /* Full Width Announcement */
+        .top-announcement { 
+          background: #8b6f5a; 
+          color: white; 
+          padding: 12px 0; 
+          text-align: center; 
+          font-weight: 600;
+          font-size: 13px;
+          letter-spacing: 0.5px;
+          width: 100%;
+        }
 
+        /* Container for content that shouldn't touch edges */
+        .container-content {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 20px;
+        }
+
+        .home-intro { text-align: center; margin: 40px 0 30px; }
+        .home-intro h1 { 
+          font-size: clamp(22px, 5vw, 28px); 
+          font-weight: 800; 
+          color: #111; 
+          margin-bottom: 8px;
+        }
+        .home-intro p { color: #666; font-size: 16px; }
+
+        .search-container-yc { 
+          position: relative; 
+          margin-bottom: 25px; 
+          max-width: 500px; 
+          margin-inline: auto; 
+        }
+        .yc-search-icon { 
+          position: absolute; 
+          left: 16px; 
+          top: 50%; 
+          transform: translateY(-50%); 
+          color: #999; 
+        }
+        .search-container-yc input {
+          width: 100%; 
+          padding: 14px 14px 14px 48px; 
+          border-radius: 12px;
+          border: 1px solid #eee; 
+          background: #f9f9f9; 
+          outline: none;
+          font-family: 'Inter', sans-serif;
+          transition: 0.3s;
+        }
+        .search-container-yc input:focus { 
+          background: #fff;
+          border-color: #8b6f5a; 
+          box-shadow: 0 0 0 4px rgba(139,111,90,0.05); 
+        }
+
+        .collections-scroll-yc { 
+          display: flex; 
+          gap: 10px; 
+          overflow-x: auto; 
+          margin-bottom: 40px; 
+          padding: 5px;
+          scrollbar-width: none; 
+          justify-content: center;
+        }
+        .collections-scroll-yc::-webkit-scrollbar { display: none; }
+        .yc-chip {
+          padding: 10px 20px; 
+          background: #fff; 
+          border-radius: 10px;
+          border: 1px solid #eee; 
+          color: #444; 
+          text-decoration: none;
+          font-size: 14px; 
+          font-weight: 600; 
+          white-space: nowrap;
+          transition: 0.2s;
+        }
+        .yc-chip:hover { border-color: #8b6f5a; color: #8b6f5a; }
+
+        .grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+          gap: 25px;
+        }
+
+        .yc-pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 60px; }
+        .yc-pagination button {
+          border: 1px solid #eee; background: white; width: 40px; height: 40px;
+          border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .yc-page-numbers button { width: 40px; height: 40px; font-weight: 700; border: 1px solid #eee; background: #fff; border-radius: 10px; cursor: pointer; }
+        .yc-page-numbers button.active { background: #111; color: white; border-color: #111; }
+
+        @media (max-width: 768px) {
+          .collections-scroll-yc { justify-content: flex-start; }
+          .grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+          .container-content { padding: 0 15px; }
+        }
+      `}</style>
+
+      {/* 1. Full Width Announcement */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="top-announcement">
+        🚚 Livraison gratuite partout au Maroc
+      </motion.div>
+
+      {/* 2. Full Width Hero (لاصق ف الجناب) */}
+      <HeroSection />
+
+      {/* 3. Restricted Content (لي خصهوم الـ padding) */}
+      <div className="container-content">
         <div className="home-intro">
           <h1>SAHAR — Modest Brand</h1>
-          <p>Élégance, pudeur et style moderne 🌊</p>
+          <p>Élégance, pudeur et style moderne</p>
         </div>
 
         <div className="search-container-yc">
@@ -96,76 +218,23 @@ export default function Home() {
             <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
               <ChevronLeft size={18} />
             </button>
-            
             <div className="yc-page-numbers">
-              {[...Array(totalPages)].map((_, i) => {
-                const p = i + 1;
-                if (p === 1 || p === totalPages || (p >= currentPage - 1 && p <= currentPage + 1)) {
-                  return (
-                    <button key={i} className={currentPage === p ? "active" : ""} onClick={() => setCurrentPage(p)}>
-                      {p}
-                    </button>
-                  );
-                }
-                return (p === currentPage - 2 || p === currentPage + 2) ? <span key={i}>...</span> : null;
-              })}
+              {[...Array(totalPages)].map((_, i) => (
+                <button 
+                  key={i} 
+                  className={currentPage === (i + 1) ? "active" : ""} 
+                  onClick={() => setCurrentPage(i + 1)}
+                >
+                  {i + 1}
+                </button>
+              ))}
             </div>
-
             <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
               <ChevronRight size={18} />
             </button>
           </div>
         )}
       </div>
-
-      <style>{`
-        .home-wrapper { padding-bottom: 50px; }
-        .top-announcement { 
-          background: #8b6f5a; color: white; padding: 12px; 
-          text-align: center; border-radius: 12px; margin-bottom: 25px; font-weight: 500;
-        }
-        .home-intro h1 { font-size: 28px; margin-bottom: 5px; color: #1a1a1a; }
-        .home-intro p { color: #666; margin-bottom: 25px; }
-
-       
-        .search-container-yc { position: relative; margin-bottom: 20px; }
-        .yc-search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; }
-        .search-container-yc input {
-          width: 100%; padding: 14px 14px 14px 45px; border-radius: 8px;
-          border: 1px solid #e1e1e1; background: #fff; outline: none;
-          font-size: 15px; transition: 0.2s;
-        }
-        .search-container-yc input:focus { border-color: #8b6f5a; box-shadow: 0 0 0 3px rgba(139,111,90,0.1); }
-
-        
-        .collections-scroll-yc { 
-          display: flex; gap: 10px; overflow-X: auto; margin-bottom: 30px; 
-          padding-bottom: 5px; scrollbar-width: none; 
-        }
-        .collections-scroll-yc::-webkit-scrollbar { display: none; }
-        .yc-chip {
-          padding: 8px 20px; background: #fff; border-radius: 50px;
-          border: 1px solid #eee; color: #333; text-decoration: none;
-          font-size: 14px; font-weight: 500; white-space: nowrap;
-          transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-        }
-        .yc-chip:hover { border-color: #8b6f5a; color: #8b6f5a; background: #fdfbf9; }
-
-       
-        .yc-pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 40px; }
-        .yc-pagination button {
-          border: 1px solid #e1e1e1; background: white; width: 40px; height: 40px;
-          border-radius: 8px; cursor: pointer; display: flex; align-items: center; 
-          justify-content: center; transition: 0.2s;
-        }
-        .yc-page-numbers { display: flex; gap: 5px; }
-        .yc-page-numbers button { width: 35px; height: 35px; font-size: 14px; font-weight: 600; }
-        .yc-page-numbers button.active { background: #1a1a1a; color: white; border-color: #1a1a1a; }
-        .yc-pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
-        .yc-pagination button:hover:not(:disabled) { border-color: #8b6f5a; }
-
-        .no-data { text-align: center; width: 100%; grid-column: 1/-1; padding: 50px; color: #888; }
-      `}</style>
     </div>
   );
 }
