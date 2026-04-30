@@ -5,16 +5,22 @@ import {
   onSnapshot,
   doc,
   updateDoc,
-  deleteDoc
+  deleteDoc,
+  query,
+  orderBy
 } from "firebase/firestore";
-import { Search, Phone, MapPin, Tag, AlertTriangle, CheckCircle, XCircle, Trash2 } from "lucide-react";
+import { 
+  Search, Phone, MapPin, Tag, AlertTriangle, 
+  CheckCircle, XCircle, Trash2, MessageSquare, Package, Calendar, Home 
+} from "lucide-react";
 
 export default function ReclamationsAdmin() {
   const [reclamations, setReclamations] = useState([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "reclamations"), (snap) => {
+    const q = query(collection(db, "reclamations"), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -29,28 +35,30 @@ export default function ReclamationsAdmin() {
   };
 
   const deleteReclamation = async (id) => {
-    if (window.confirm("Supprimer cette réclamation ?")) {
+    if (window.confirm("Supprimer cette réclamation définitivement ?")) {
       await deleteDoc(doc(db, "reclamations", id));
     }
   };
 
   const filtered = reclamations.filter(r =>
     r.name?.toLowerCase().includes(search.toLowerCase()) ||
-    r.phone?.includes(search)
+    r.phone?.includes(search) ||
+    r.city?.toLowerCase().includes(search.toLowerCase()) ||
+    r.productName?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="admin-rec-page container">
       <div className="admin-header">
         <h1>Gestion des Réclamations</h1>
-        <p>Gérez les retours et les échanges de vos clientes</p>
+        <p>Suivi des retours, échanges et adresses de livraison</p>
       </div>
 
       <div className="search-bar-admin">
         <Search size={20} className="search-icon" />
         <input
           type="text"
-          placeholder="Rechercher par nom ou téléphone..."
+          placeholder="Nom, téléphone, ville ou produit..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -59,44 +67,74 @@ export default function ReclamationsAdmin() {
       <div className="reclamations-grid">
         {filtered.map((r) => (
           <div key={r.id} className={`rec-card-admin ${r.status}`}>
-            <div className="rec-badge-status">
-               {r.status === 'accepted' ? <CheckCircle size={14}/> : r.status === 'rejected' ? <XCircle size={14}/> : <AlertTriangle size={14}/>}
-               {r.status || 'En attente'}
+            <div className="rec-status-row">
+              <div className="rec-badge-status">
+                {r.status === 'accepted' ? <CheckCircle size={14}/> : r.status === 'rejected' ? <XCircle size={14}/> : <AlertTriangle size={14}/>}
+                {r.status === 'accepted' ? 'Acceptée' : r.status === 'rejected' ? 'Refusée' : 'En attente'}
+              </div>
+              <span className="rec-date">
+                <Calendar size={12} /> 
+                {r.createdAt?.toDate ? new Date(r.createdAt.toDate()).toLocaleDateString('fr-FR') : 'Récemment'}
+              </span>
             </div>
 
             <div className="rec-main-info">
               <h3>{r.name}</h3>
-              <a href={`tel:${r.phone}`} className="phone-btn">
-                <Phone size={16} /> {r.phone}
-              </a>
+              <div className="contact-actions">
+                <a href={`tel:${r.phone}`} className="contact-link">
+                  <Phone size={14} /> {r.phone}
+                </a>
+                <a 
+                  href={`https://wa.me/212${r.phone?.replace(/^0/, '')}`} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="contact-link whatsapp"
+                >
+                  <MessageSquare size={14} /> WhatsApp
+                </a>
+              </div>
             </div>
 
-            <hr />
+            <hr className="divider" />
 
-            <div className="rec-details">
-              <div className="detail-row">
+            <div className="rec-details-grid">
+              <div className="detail-item">
+                <Package size={16} />
+                <div className="detail-text">
+                  <label>Produit / Taille</label>
+                  <span>{r.productName || "Inconnu"} - {r.size || "-"}</span>
+                </div>
+              </div>
+              <div className="detail-item">
                 <MapPin size={16} />
-                <span>{r.city || "-"}, {r.address || "-"}</span>
+                <div className="detail-text">
+                  <label>Ville</label>
+                  <span>{r.city || "Non spécifiée"}</span>
+                </div>
               </div>
-              <div className="detail-row">
-                <Tag size={16} />
-                <span>{r.productName || "Produit inconnu"} (Taille: {r.size || "-"})</span>
+              {/* عرض العنوان الكامل */}
+              <div className="detail-item full-width-detail">
+                <Home size={16} />
+                <div className="detail-text">
+                  <label>Adresse Exacte</label>
+                  <span className="address-text">{r.address || "Aucune adresse fournie"}</span>
+                </div>
               </div>
             </div>
 
-            <div className="problem-box">
-              <label>Description du problème:</label>
+            <div className="problem-box-admin">
+              <label>Message du client :</label>
               <p>{r.problem}</p>
             </div>
 
-            <div className="admin-actions">
-              <button className="btn-acc" onClick={() => updateStatus(r.id, "accepted")}>
+            <div className="admin-actions-footer">
+              <button className="btn-action accept" onClick={() => updateStatus(r.id, "accepted")}>
                 Accepter
               </button>
-              <button className="btn-ref" onClick={() => updateStatus(r.id, "rejected")}>
+              <button className="btn-action reject" onClick={() => updateStatus(r.id, "rejected")}>
                 Refuser
               </button>
-              <button className="btn-del" onClick={() => deleteReclamation(r.id)}>
+              <button className="btn-delete-icon" onClick={() => deleteReclamation(r.id)}>
                 <Trash2 size={18} />
               </button>
             </div>
@@ -105,75 +143,63 @@ export default function ReclamationsAdmin() {
       </div>
 
       <style>{`
-        .admin-rec-page { padding: 40px 20px; background: #f8f9fa; min-height: 100vh; }
-        .admin-header { margin-bottom: 30px; border-left: 5px solid #8b6f5a; padding-left: 20px; }
-        .admin-header h1 { font-size: 28px; color: #2d2d2d; margin-bottom: 5px; }
-        .admin-header p { color: #888; font-size: 14px; }
+        .admin-rec-page { padding: 40px 20px; background: #f9fafb; min-height: 100vh; font-family: sans-serif; }
+        .admin-header { margin-bottom: 30px; border-left: 4px solid #8b6f5a; padding-left: 15px; }
+        .admin-header h1 { font-size: 26px; color: #111; margin: 0; }
+        .admin-header p { color: #666; margin: 5px 0 0; }
 
-        .search-bar-admin { 
-          position: relative; max-width: 500px; margin-bottom: 40px; 
-        }
-        .search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #aaa; }
+        .search-bar-admin { position: relative; max-width: 450px; margin-bottom: 30px; }
+        .search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #999; }
         .search-bar-admin input { 
-          width: 100%; padding: 15px 15px 15px 45px; border-radius: 12px; 
-          border: 1px solid #ddd; outline: none; font-size: 15px;
-          transition: 0.3s;
+          width: 100%; padding: 12px 12px 12px 45px; border-radius: 10px; 
+          border: 1px solid #ddd; outline: none; transition: 0.2s;
         }
-        .search-bar-admin input:focus { border-color: #8b6f5a; box-shadow: 0 4px 12px rgba(139,111,90,0.1); }
 
-        .reclamations-grid { 
-          display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 25px; 
-        }
+        .reclamations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; }
 
         .rec-card-admin { 
-          background: white; border-radius: 16px; padding: 25px; 
-          border: 1px solid #eee; position: relative; transition: 0.3s;
-          display: flex; flex-direction: column; gap: 15px;
+          background: white; border-radius: 14px; padding: 20px; 
+          border: 1px solid #eee; display: flex; flex-direction: column; gap: 15px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
-        .rec-card-admin:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
 
+        .rec-status-row { display: flex; justify-content: space-between; align-items: center; }
         .rec-badge-status { 
-          align-self: flex-start; padding: 5px 12px; border-radius: 50px; 
-          font-size: 12px; font-weight: 700; text-transform: uppercase;
-          display: flex; align-items: center; gap: 5px;
-          background: #fff4e5; color: #b45309; /* Pending */
+          padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
+          text-transform: uppercase; display: flex; align-items: center; gap: 4px;
+          background: #fef3c7; color: #92400e; 
         }
-        .rec-card-admin.accepted .rec-badge-status { background: #dcfce7; color: #15803d; }
-        .rec-card-admin.rejected .rec-badge-status { background: #fee2e2; color: #b91c1c; }
+        .accepted .rec-badge-status { background: #dcfce7; color: #166534; }
+        .rejected .rec-badge-status { background: #fee2e2; color: #991b1b; }
 
-        .rec-main-info h3 { font-size: 20px; color: #2d2d2d; margin-bottom: 10px; }
-        .phone-btn { 
-          display: inline-flex; align-items: center; gap: 8px; 
-          color: #8b6f5a; text-decoration: none; font-weight: 600; font-size: 15px;
-        }
+        .rec-main-info h3 { margin: 0; font-size: 19px; color: #111; }
+        .contact-actions { display: flex; gap: 12px; margin-top: 8px; }
+        .contact-link { font-size: 13px; text-decoration: none; color: #8b6f5a; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+        .contact-link.whatsapp { color: #25d366; }
 
-        .rec-details { display: flex; flex-direction: column; gap: 10px; }
-        .detail-row { display: flex; align-items: center; gap: 10px; color: #666; font-size: 14px; }
+        .divider { border: 0; border-top: 1px solid #f0f0f0; margin: 0; }
 
-        .problem-box { 
-          background: #fdfbf9; padding: 15px; border-radius: 10px; border: 1px dashed #ddd;
-        }
-        .problem-box label { display: block; font-size: 12px; font-weight: 800; color: #888; margin-bottom: 5px; text-transform: uppercase; }
-        .problem-box p { font-size: 14px; color: #444; line-height: 1.5; }
+        .rec-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .full-width-detail { grid-column: span 2; border-top: 1px dashed #f0f0f0; padding-top: 10px; }
+        .detail-item { display: flex; align-items: flex-start; gap: 8px; color: #555; }
+        .detail-text label { display: block; font-size: 10px; text-transform: uppercase; color: #999; font-weight: 700; margin-bottom: 2px; }
+        .detail-text span { font-size: 13px; font-weight: 500; }
+        .address-text { color: #2d2d2d; line-height: 1.4; }
 
-        .admin-actions { 
-          display: flex; gap: 10px; margin-top: auto; padding-top: 15px;
-        }
-        .admin-actions button { 
-          flex: 1; padding: 10px; border-radius: 8px; border: none; 
-          font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 13px;
-        }
-        .btn-acc { background: #15803d; color: white; }
-        .btn-ref { background: #eee; color: #444; }
-        .btn-del { background: #fee2e2; color: #b91c1c; flex: 0 0 50px !important; }
-        
-        .btn-acc:hover { background: #166534; }
-        .btn-ref:hover { background: #ddd; }
-        .btn-del:hover { background: #fecaca; }
+        .problem-box-admin { background: #f9f9f9; padding: 12px; border-radius: 8px; border: 1px solid #f0f0f0; }
+        .problem-box-admin label { font-size: 11px; font-weight: 700; color: #8b6f5a; display: block; margin-bottom: 4px; }
+        .problem-box-admin p { margin: 0; font-size: 13px; color: #444; line-height: 1.4; }
 
-        @media (max-width: 768px) {
+        .admin-actions-footer { display: flex; gap: 8px; margin-top: auto; padding-top: 10px; }
+        .btn-action { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; font-size: 13px; }
+        .btn-action.accept { background: #8b6f5a; color: white; }
+        .btn-action.reject { background: #f3f4f6; color: #4b5563; }
+        .btn-delete-icon { background: #fee2e2; color: #dc2626; border: none; padding: 8px; border-radius: 8px; cursor: pointer; }
+
+        @media (max-width: 600px) {
           .reclamations-grid { grid-template-columns: 1fr; }
-          .admin-rec-page { padding: 20px 15px; }
+          .rec-details-grid { grid-template-columns: 1fr; }
+          .full-width-detail { grid-column: span 1; }
         }
       `}</style>
     </div>
