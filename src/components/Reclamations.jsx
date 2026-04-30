@@ -54,7 +54,6 @@ export default function Reclamation() {
       </div>
 
       <div className="rec-content-wrapper">
-        {/* 1. الشروط والآجال هي الأولى الفوق */}
         <div className="conditions-full-width">
           <div className="conditions-card-v2">
             <div className="card-title">
@@ -68,12 +67,11 @@ export default function Reclamation() {
               <div className="cond-item"><span>Note</span> Aucun échange sans raison valable.</div>
             </div>
             <div className="support-notice-v2">
-              🚀 Notre équipe traitera votre demande sous 24h à 48h.
+              🚀Notre équipe traitera votre demande sous 24h à 48h.
             </div>
           </div>
         </div>
 
-        {/* 2. الفورم يجي تحتها مباشرة */}
         <div className="rec-form-card">
           <form onSubmit={handleSubmit}>
             <div className="form-section">

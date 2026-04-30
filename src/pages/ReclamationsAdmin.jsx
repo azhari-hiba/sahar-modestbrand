@@ -112,7 +112,6 @@ export default function ReclamationsAdmin() {
                   <span>{r.city || "Non spécifiée"}</span>
                 </div>
               </div>
-              {/* عرض العنوان الكامل */}
               <div className="detail-item full-width-detail">
                 <Home size={16} />
                 <div className="detail-text">
