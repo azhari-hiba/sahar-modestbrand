@@ -67,7 +67,7 @@ export default function Reclamation() {
               <div className="cond-item"><span>Note</span> Aucun échange sans raison valable.</div>
             </div>
             <div className="support-notice-v2">
-              🚀Notre équipe traitera votre demande sous 24h à 48h.
+              Notre équipe traitera votre demande sous 24h à 48h.
             </div>
           </div>
         </div>
